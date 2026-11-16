@@ -84,3 +84,43 @@ uvicorn app.main:app --port 8000      # http://localhost:8000/docs
 |---|---|---|
 | 14.1 | 1 a 4: negocio y datos, preparación, modelado, evaluación | Contrato de datos, Pipeline de scikit-learn, validación cruzada, umbral por costo, modelo `@champion` |
 | 14.2 | 5 y 6: despliegue, monitoreo | API sin skew, imagen en Docker Hub, drift, reentrenamiento automático |
+
+## Resultados del laboratorio 14.1
+
+Pipeline CRISP-ML(Q) con cuatro candidatos comparados por validación cruzada estratificada
+(5 folds, 240 clientes de train). El set de test se reservó para la evaluación final.
+
+| Modelo | F1 CV | ROC-AUC CV |
+|---|---:|---:|
+| baseline (siempre churn) | 0.6629 | — |
+| logistic | 0.6666 ± 0.0454 | 0.7315 |
+| random_forest | **0.6900** ± 0.0426 | **0.7326** |
+| xgboost | 0.6829 ± 0.0656 | 0.7100 |
+| gradient_boosting (cuarto modelo) | 0.6476 ± 0.0761 | 0.6858 |
+
+El cuarto modelo candidato es `GradientBoostingClassifier(n_estimators=100, max_depth=3,
+learning_rate=0.1)`. Quedó último por F1 y por ROC-AUC de validación cruzada, así que **no
+cambia el modelo elegido**: `random_forest` sigue siendo el mejor y es el que se registra
+como `@champion`.
+
+Evaluación en test con el umbral elegido por costo (`0.3`):
+
+| Métrica | Valor |
+|---|---:|
+| F1 | 0.7013 |
+| Precision | 0.5745 |
+| Recall | 0.9000 |
+| ROC-AUC | 0.7989 |
+| Costo por cliente | S/ 43.33 |
+
+El quality gate pasa sus 4 checks: F1 ≥ 0.60, ROC-AUC ≥ 0.70, brecha de recall ≤ 0.25 y
+costo menor que contactar a todos (S/ 50.00). La model card completa se genera en
+`reports/model_card.md` y el detalle en `reports/evaluation_report.json`.
+
+```bash
+python src/validate_data.py
+python src/data_prep.py
+python src/train.py --model all
+python src/evaluate_and_register.py
+pytest tests/ -q
+```
