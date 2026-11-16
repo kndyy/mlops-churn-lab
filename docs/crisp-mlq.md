@@ -26,7 +26,7 @@ los detecta. Esta ficha es el registro de esas decisiones: se versiona junto al 
 | 2. Preparación | Training-serving skew: la API preprocesa distinto que el entrenamiento | Preprocesamiento dentro del Pipeline | `src/features.py`, `tests/test_features.py` |
 | 2. Preparación | Data leakage: el escalador ve datos de test | El Pipeline se ajusta solo con train, fold por fold | `src/train.py` |
 | 3. Modelado | Elegir modelo mirando test (optimismo) | Selección por validación cruzada | `src/train.py` |
-| 3. Modelado | Un modelo que no aporta sobre lo trivial | Baseline registrado en MLflow | `src/train.py` |
+| 3. Modelado | Un modelo que no aporta sobre lo trivial | Baseline registrado en MLflow y cuatro candidatos comparados por CV | `src/train.py` |
 | 4. Evaluación | Buena métrica promedio, mala en un segmento | Recall por segmento, brecha máxima | `src/evaluate_and_register.py` |
 | 4. Evaluación | Promover un modelo peor que el vigente | Champion / challenger | `src/evaluate_and_register.py` |
 | 5. Despliegue | La API sirve algo distinto a lo evaluado | Test de skew contra la API en ejecución | `tests/test_skew.py`, job `smoke-test` |
@@ -38,5 +38,8 @@ los detecta. Esta ficha es el registro de esas decisiones: se versiona junto al 
 
 | Fecha | Decisión | Motivo |
 |---|---|---|
-| | Umbral de decisión elegido por costo, no 0.5 | Un FN cuesta el doble que un FP |
-| | El modelo se selecciona por F1 de validación cruzada | Test queda reservado para la evaluación final |
+| 2026-11-16 | Umbral de decisión elegido por costo, no 0.5 | Un FN cuesta el doble que un FP |
+| 2026-11-16 | El modelo se selecciona por F1 de validación cruzada | Test queda reservado para la evaluación final |
+| 2026-11-16 | Cuarto candidato `GradientBoostingClassifier` agregado al modelado | Comparar una alternativa de boosting por árboles contra logistic, random forest y xgboost |
+| 2026-11-16 | Se mantienen los costos S/ 200 (FN) y S/ 100 (FP) | Reflejan la campaña de retención del caso y permiten un umbral distinto de 0.5 |
+| 2026-11-16 | `@champion` solo se mueve si el modelo pasa el quality gate y no cuesta más que el vigente | Evitar promover un modelo peor que el que ya está en producción |
