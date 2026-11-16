@@ -42,7 +42,17 @@ jobs:
             exit 1
           fi
           echo "Usando artefactos de la corrida $RUN_ID"
-          gh run download "$RUN_ID" --name production-artifacts --dir .
+          # Se descarga en una carpeta temporal para no chocar con los archivos
+          # versionados de data/ (dataset y feature_names.csv).
+          rm -rf /tmp/churn-artifacts && mkdir -p /tmp/churn-artifacts
+          gh run download "$RUN_ID" --name production-artifacts --dir /tmp/churn-artifacts
+          mkdir -p data reports
+          cp /tmp/churn-artifacts/data/production_model.pkl data/
+          cp /tmp/churn-artifacts/data/production_model_info.json data/
+          cp /tmp/churn-artifacts/data/train.csv data/ 2>/dev/null || true
+          cp /tmp/churn-artifacts/data/test.csv data/ 2>/dev/null || true
+          cp -r /tmp/churn-artifacts/reports/. reports/ 2>/dev/null || true
+          ls -lh data/production_model.pkl data/production_model_info.json data/test.csv
 
       - name: Ejecutar monitor
         id: monitor
